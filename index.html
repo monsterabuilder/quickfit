@@ -1,0 +1,1125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0a0a1a">
+  <title>QuickFit</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #0a0a1a;
+      color: #f0f0f0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 24px 16px;
+    }
+    h1 { font-size: 2rem; color: #60a5fa; margin-bottom: 4px; letter-spacing: 1px; }
+    .tagline { font-size: 0.9rem; color: #888; margin-bottom: 32px; }
+    .section-title {
+      font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px;
+      color: #60a5fa; margin-bottom: 10px; align-self: flex-start;
+      width: 100%; max-width: 480px;
+    }
+    .slider-wrapper { width: 100%; max-width: 480px; margin-bottom: 28px; }
+    .slider-label { display: flex; justify-content: space-between; font-size: 0.85rem; color: #aaa; margin-bottom: 8px; }
+    .slider-label span { font-size: 1.1rem; font-weight: bold; color: #60a5fa; }
+    input[type="range"] { width: 100%; accent-color: #60a5fa; height: 6px; cursor: pointer; }
+    .category-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      gap: 10px; width: 100%; max-width: 480px; margin-bottom: 28px;
+    }
+    .diff-grid {
+      display: grid; grid-template-columns: repeat(4, 1fr);
+      gap: 10px; width: 100%; max-width: 480px; margin-bottom: 28px;
+    }
+    .cat-btn {
+      background: #1a1a1a; border: 2px solid #2a2a2a;
+      border-radius: 12px; padding: 14px 8px; text-align: center;
+      cursor: pointer; transition: all 0.2s;
+    }
+    .cat-btn .icon { font-size: 1.6rem; display: block; margin-bottom: 4px; }
+    .cat-btn .label { font-size: 0.78rem; color: #ccc; }
+    .cat-btn.selected { border-color: #60a5fa; background: #1a2e1a; }
+    .cat-btn.selected .label { color: #60a5fa; }
+    .preview-box {
+      width: 100%; max-width: 480px; background: #1a1a1a;
+      border-radius: 16px; padding: 20px; margin-bottom: 24px; display: none;
+    }
+    .preview-box.visible { display: block; }
+    .preview-box h3 { font-size: 0.95rem; color: #60a5fa; margin-bottom: 14px; }
+    .workout-item {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 0; border-bottom: 1px solid #2a2a2a; flex-wrap: wrap;
+    }
+    .workout-item:last-child { border-bottom: none; }
+    .workout-icon { font-size: 1.4rem; width: 36px; text-align: center; }
+    .workout-info .name { font-size: 0.9rem; font-weight: 600; color: #f0f0f0; }
+    .workout-info .cue { font-size: 0.75rem; color: #888; margin-top: 2px; }
+    .workout-duration { margin-left: auto; font-size: 0.8rem; color: #60a5fa; white-space: nowrap; }
+    .level-badge {
+      font-size: 0.65rem; padding: 2px 6px; border-radius: 99px;
+      font-weight: 600; text-transform: uppercase; margin-left: 6px;
+    }
+    .level-beginner { background: #1a3a1a; color: #4ade80; }
+    .level-intermediate { background: #1a2a3a; color: #60a5fa; }
+    .level-advanced { background: #3a1a1a; color: #f87171; }
+    .begin-btn {
+      width: 100%; max-width: 480px; padding: 16px;
+      background: #60a5fa; color: #0f0f0f; font-size: 1rem; font-weight: 700;
+      border: none; border-radius: 14px; cursor: pointer; display: none;
+      transition: background 0.2s; letter-spacing: 0.5px;
+    }
+    .begin-btn:hover { background: #22c55e; }
+    .begin-btn.visible { display: block; }
+    #workout-screen {
+      display: none; flex-direction: column; align-items: center;
+      width: 100%; max-width: 480px; text-align: center;
+    }
+    #workout-screen.active { display: flex; }
+    .progress-bar-wrap {
+      width: 100%; background: #2a2a2a; border-radius: 99px;
+      height: 8px; margin-bottom: 32px; overflow: hidden;
+    }
+    .progress-bar-fill {
+      height: 100%; background: #60a5fa; border-radius: 99px; transition: width 0.5s ease;
+    }
+    .exercise-icon { font-size: 5rem; margin-bottom: 12px; }
+    .exercise-name { font-size: 1.6rem; font-weight: 700; margin-bottom: 6px; }
+    .exercise-cue { font-size: 0.88rem; color: #888; margin-bottom: 28px; max-width: 300px; }
+    .timer-ring {
+      width: 140px; height: 140px; border-radius: 50%;
+      border: 6px solid #2a2a2a; display: flex; align-items: center;
+      justify-content: center; margin-bottom: 8px; position: relative;
+    }
+    .timer-number { font-size: 2.8rem; font-weight: 700; color: #60a5fa; }
+    .exercise-counter { font-size: 0.8rem; color: #888; margin-bottom: 32px; }
+    .btn-row { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+    .pause-btn {
+      padding: 12px 24px; background: transparent;
+      border: 2px solid #60a5fa; color: #60a5fa; border-radius: 12px;
+      font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: all 0.2s;
+    }
+    .pause-btn:hover { background: #60a5fa; color: #0f0f0f; }
+    .rest-label { font-size: 1rem; color: #facc15; font-weight: 600; margin-bottom: 6px; }
+    .next-up { font-size: 0.82rem; color: #888; margin-bottom: 20px; }
+    #complete-screen {
+      display: none; flex-direction: column; align-items: center;
+      text-align: center; width: 100%; max-width: 480px; padding-top: 40px;
+    }
+    #complete-screen.active { display: flex; }
+    #complete-screen .trophy { font-size: 5rem; margin-bottom: 16px; }
+    #complete-screen h2 { font-size: 1.8rem; color: #60a5fa; margin-bottom: 8px; }
+    #complete-screen p { color: #888; font-size: 0.9rem; margin-bottom: 32px; }
+    .restart-btn {
+      padding: 14px 48px; background: #60a5fa; color: #0f0f0f;
+      font-weight: 700; border: none; border-radius: 12px; font-size: 1rem; cursor: pointer;
+    }
+    #setup-screen { width: 100%; display: flex; flex-direction: column; align-items: center; }
+    /* ── ACHIEVEMENT TOAST ──────────────────────── */
+.achievement-toast {
+  position: fixed;
+  top: -120px;           /* starts off-screen above */
+  left: 50%;
+  transform: translateX(-50%);
+  background: #1a1a2e;
+  border: 2px solid #fbbf24;
+  border-radius: 16px;
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  z-index: 9999;
+  transition: top 0.5s ease;
+  max-width: 360px;
+  width: 90%;
+  box-shadow: 0 0 30px rgba(251, 191, 36, 0.3);
+}
+.achievement-toast.show {
+  top: 24px;             /* slides down into view */
+}
+.achievement-toast-icon {
+  font-size: 2.2rem;
+  flex-shrink: 0;
+}
+.achievement-toast-title {
+  font-size: 0.7rem;
+  color: #fbbf24;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 2px;
+}
+.achievement-toast-name {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #fff;
+}
+.achievement-toast-desc {
+  font-size: 0.78rem;
+  color: #888;
+  margin-top: 2px;
+}
+
+/* ── ACHIEVEMENT GALLERY SCREEN ─────────────── */
+#achievement-screen {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: 480px;
+  padding-top: 20px;
+}
+#achievement-screen.active {
+  display: flex;
+}
+.achievement-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  width: 100%;
+  margin-top: 16px;
+  margin-bottom: 24px;
+}
+.achievement-card {
+  background: #1a1a1a;
+  border: 2px solid #2a2a2a;
+  border-radius: 14px;
+  padding: 16px 8px;
+  text-align: center;
+  transition: all 0.3s;
+}
+.achievement-card.unlocked {
+  border-color: #fbbf24;
+  background: #1a1a1a;
+}
+.achievement-card.locked {
+  opacity: 0.35;
+  filter: grayscale(100%);
+}
+.achievement-card .a-icon {
+  font-size: 2rem;
+  display: block;
+  margin-bottom: 6px;
+}
+.achievement-card .a-name {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 4px;
+}
+.achievement-card .a-desc {
+  font-size: 0.65rem;
+  color: #888;
+}
+.achievement-card.unlocked .a-name {
+  color: #fbbf24;
+}
+.trophy-btn {
+  background: transparent;
+  border: 2px solid #2a2a2a;
+  border-radius: 12px;
+  padding: 10px 20px;
+  color: #fbbf24;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-bottom: 24px;
+}
+.trophy-btn:hover {
+  border-color: #fbbf24;
+  background: #1a1a1a;
+}
+.achievement-progress {
+  font-size: 0.85rem;
+  color: #888;
+  margin-bottom: 8px;
+}
+.back-btn {
+  padding: 12px 36px;
+  background: transparent;
+  border: 2px solid #60a5fa;
+  color: #60a5fa;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  margin-bottom: 24px;
+}
+.back-btn:hover {
+  background: #60a5fa;
+  color: #0f0f0f;
+}
+  </style>
+</head>
+<body>
+
+<div id="setup-screen">
+  <h1>⚡ QuickFit</h1>
+  <p class="tagline">No equipment. Anywhere. Anytime.</p>
+  <button class="trophy-btn" onclick="showAchievements()">🏅 Achievements</button>
+  <p class="section-title">How long do you have?</p>
+  <div class="slider-wrapper">
+    <div class="slider-label">
+      <span id="duration-display">5 mins</span>
+      <span style="color:#888; font-size:0.8rem;">1 – 10 mins</span>
+    </div>
+    <input type="range" id="duration-slider" min="1" max="10" value="5" oninput="updateDuration(this.value)">
+  </div>
+  <p class="section-title">Difficulty</p>
+  <div class="diff-grid">
+    <div class="cat-btn diff-btn selected" id="diff-all" onclick="setDifficulty(this, 'all')"><span class="icon">🌟</span><span class="label">All</span></div>
+    <div class="cat-btn diff-btn" onclick="setDifficulty(this, 'beginner')"><span class="icon">🟢</span><span class="label">Beginner</span></div>
+    <div class="cat-btn diff-btn" onclick="setDifficulty(this, 'intermediate')"><span class="icon">🟡</span><span class="label">Intermediate</span></div>
+    <div class="cat-btn diff-btn" onclick="setDifficulty(this, 'advanced')"><span class="icon">🔴</span><span class="label">Advanced</span></div>
+  </div>
+  <p class="section-title">Target area</p>
+  <div class="category-grid">
+    <div class="cat-btn" onclick="toggleCategory(this, 'core')"><span class="icon">🔥</span><span class="label">Core</span></div>
+    <div class="cat-btn" onclick="toggleCategory(this, 'arms')"><span class="icon">💪</span><span class="label">Arms</span></div>
+    <div class="cat-btn" onclick="toggleCategory(this, 'legs')"><span class="icon">🦵</span><span class="label">Legs</span></div>
+    <div class="cat-btn" onclick="toggleCategory(this, 'back')"><span class="icon">🧱</span><span class="label">Back</span></div>
+    <div class="cat-btn" onclick="toggleCategory(this, 'fullbody')"><span class="icon">⚡</span><span class="label">Full Body</span></div>
+    <div class="cat-btn" onclick="toggleCategory(this, 'cardio')"><span class="icon">🏃</span><span class="label">Cardio</span></div>
+  </div>
+  <p class="section-title" id="preview-title" style="display:none;">Your workout</p>
+  <div class="preview-box" id="preview-box"></div>
+  <button class="begin-btn" id="begin-btn" onclick="startWorkout()">BEGIN WORKOUT →</button>
+</div>
+
+<div id="workout-screen">
+  <div class="progress-bar-wrap" style="width:100%;max-width:480px;">
+    <div class="progress-bar-fill" id="progress-fill" style="width:0%"></div>
+  </div>
+  <div class="exercise-icon" id="ex-icon"></div>
+  <div class="rest-label" id="rest-label" style="display:none;">💤 REST</div>
+  <div class="next-up" id="next-up"></div>
+  <div class="exercise-name" id="ex-name"></div>
+  <div class="exercise-cue" id="ex-cue"></div>
+  <div class="timer-ring">
+    <span class="timer-number" id="timer-num">0</span>
+  </div>
+  <div class="exercise-counter" id="ex-counter"></div>
+  <div class="btn-row">
+    <button class="pause-btn" id="previous-btn" onclick="previousExercise()">⏮ Prev</button>
+    <button class="pause-btn" id="pause-btn" onclick="togglePause()">⏸ Pause</button>
+    <button class="pause-btn" id="skip-btn" onclick="skipExercise()">⏭ Skip</button>
+  </div>
+</div>
+
+<div id="complete-screen">
+  <div class="trophy">🏆</div>
+  <h2>Workout Complete!</h2>
+  
+  <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; width: 100%; max-width: 320px; margin: 0 auto 24px auto;">
+    <div style="background: #1a1a1a; padding: 12px; border-radius: 12px; border: 1px solid #2a2a2a;">
+      <p style="font-size: 0.75rem; color: #888; text-transform: uppercase; margin-bottom: 4px; letter-spacing: 0.5px;">Total Workouts</p>
+      <p id="stat-total" style="font-size: 1.5rem; font-weight: 700; color: #fff; margin: 0;">0</p>
+    </div>
+    <div style="background: #1a1a1a; padding: 12px; border-radius: 12px; border: 1px solid #2a2a2a;">
+      <p style="font-size: 0.75rem; color: #888; text-transform: uppercase; margin-bottom: 4px; letter-spacing: 0.5px;">Current Streak</p>
+      <p id="stat-streak" style="font-size: 1.5rem; font-weight: 700; color: #60a5fa; margin: 0;">0 Days</p>
+    </div>
+  </div>
+
+  <p id="complete-msg" style="margin-top: 0;"></p>
+  <button class="restart-btn" onclick="resetApp()">Start Another</button>
+</div>
+<div id="achievement-screen">
+  <h1>🏅 Achievements</h1>
+  <p class="achievement-progress" id="achievement-progress"></p>
+  <div class="achievement-grid" id="achievement-grid"></div>
+  <button class="back-btn" onclick="hideAchievements()">← Back</button>
+</div>
+<script>
+  // Duration ranges per difficulty level (min, max seconds)
+  const DURATION_RANGE = {
+    beginner:     { min: 40, max: 50 },
+    intermediate: { min: 40, max: 55 },
+    advanced:     { min: 50, max: 75 },
+  };
+
+  const REST_RANGE = {
+    beginner:     { min: 15, max: 20 },
+    intermediate: { min: 12, max: 18 },
+    advanced:     { min: 10, max: 15 },
+  };
+
+  function randBetween(min, max) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+  }
+
+  function getExDuration(level) {
+    const r = DURATION_RANGE[level] || DURATION_RANGE.beginner;
+    return randBetween(r.min, r.max);
+  }
+
+  function getRestDuration(level) {
+    const r = REST_RANGE[level] || REST_RANGE.beginner;
+    return randBetween(r.min, r.max);
+  }
+
+  const LIBRARY = {
+    core: [
+      { name: "Crunches",                   icon: "🤸", cue: "Hands behind head, lift shoulders off floor", level: "beginner" },
+      { name: "Plank",                      icon: "🧘", cue: "Keep hips level, breathe steadily", level: "beginner" },
+      { name: "Flutter Kicks",              icon: "🦵", cue: "Legs straight, small rapid alternating kicks", level: "beginner" },
+      { name: "Bicycle Crunch",             icon: "🚴", cue: "Elbow to opposite knee, slow and controlled", level: "beginner" },
+      { name: "Leg Raises",                 icon: "⬆️", cue: "Keep lower back pressed to floor", level: "beginner" },
+      { name: "Dead Bug Crunch",            icon: "🐛", cue: "Opposite arm and leg lower slowly together", level: "beginner" },
+      { name: "Toe Touches",                icon: "🖐️", cue: "Crunch up and reach both hands to toes", level: "beginner" },
+      { name: "Seated Knee Tucks",          icon: "🦵", cue: "Pull knees to chest while leaning back", level: "beginner" },
+      { name: "Oblique Crunches",           icon: "↩️", cue: "Crunch elbow toward opposite raised knee", level: "beginner" },
+      { name: "Reverse Crunches",           icon: "⬆️", cue: "Curl hips off floor toward your chest", level: "beginner" },
+      { name: "Standing Side Crunch",       icon: "🏋️", cue: "Lift knee to elbow, crunch side oblique", level: "beginner" },
+      { name: "Pelvic Tilts",               icon: "🔃", cue: "Lie flat and rock pelvis gently up down", level: "beginner" },
+      { name: "Heel Taps",                  icon: "👟", cue: "Crunch and alternate tapping each heel", level: "beginner" },
+      { name: "Hollow Body Hold",           icon: "🍌", cue: "Press lower back flat, lift arms and legs", level: "intermediate" },
+      { name: "Side Plank",                 icon: "📐", cue: "Stack feet, lift hips into a straight line", level: "intermediate" },
+      { name: "Russian Twists",             icon: "🔄", cue: "Lean back, rotate torso side to side", level: "intermediate" },
+      { name: "Plank Shoulder Taps",        icon: "👆", cue: "Hold plank, tap each shoulder alternately", level: "intermediate" },
+      { name: "Crossbody Mountain Climber", icon: "🧗", cue: "Drive knee toward opposite elbow in plank", level: "intermediate" },
+      { name: "Plank Hip Dips",             icon: "〰️", cue: "Rotate hips side to side in forearm plank", level: "intermediate" },
+      { name: "Arch Body Hold",             icon: "🌈", cue: "Lie face down, lift limbs and chest off floor", level: "intermediate" },
+      { name: "Long Lever Plank",           icon: "📏", cue: "Forearm plank with arms extended further forward", level: "intermediate" },
+      { name: "Seated Bicycle",             icon: "🚲", cue: "Seated, pedal legs in air without touching floor", level: "intermediate" },
+      { name: "V-Sit Hold",                 icon: "✌️", cue: "Balance on tailbone, raise legs and chest up", level: "advanced" },
+      { name: "Dragon Flag",                icon: "🐉", cue: "Lower straight body slowly using only shoulders", level: "advanced" },
+      { name: "Windshield Wipers",          icon: "🌧️", cue: "Rotate raised legs side to side slowly", level: "advanced" },
+      { name: "Stir the Pot",               icon: "🥣", cue: "Circle forearms on floor while holding plank", level: "advanced" },
+      { name: "Seated L-Sit",               icon: "🪑", cue: "Lift hips off floor, hold legs straight out", level: "advanced" },
+      { name: "Full Body Crunch",           icon: "💥", cue: "Simultaneously curl knees and shoulders to center", level: "advanced" },
+      { name: "Hollow Body Rock",           icon: "🪸", cue: "Hold hollow shape and rock forward and back", level: "advanced" },
+    ],
+    arms: [
+      { name: "Push Ups",                   icon: "💪", cue: "Lower chest to floor, elbows at 45°", level: "beginner" },
+      { name: "Wall Push Ups",              icon: "🧱", cue: "Push against wall to build foundational strength", level: "beginner" },
+      { name: "Wide Push Ups",              icon: "↔️", cue: "Hands wider than shoulders, targets chest", level: "beginner" },
+      { name: "Shoulder Taps",              icon: "🤝", cue: "In high plank, tap each shoulder alternately", level: "beginner" },
+      { name: "Push Up to Downdog",         icon: "🐕", cue: "Push up then lift hips into downward dog", level: "beginner" },
+      { name: "Wrist Circles",              icon: "🔁", cue: "Rotate wrists slowly to build joint health", level: "beginner" },
+      { name: "Negative Push Up",           icon: "🐢", cue: "Lower chest to floor over five slow seconds", level: "beginner" },
+      { name: "Arm Circles",                icon: "⭕", cue: "Extend arms out, circle forward then backward", level: "beginner" },
+      { name: "Plank Hold",                 icon: "🧱", cue: "Hold rigid straight line on hands and toes", level: "beginner" },
+      { name: "Diamond Push Ups",           icon: "💎", cue: "Hands form a diamond under chest", level: "intermediate" },
+      { name: "Pike Push Ups",              icon: "🔺", cue: "Hips high, lower head towards floor", level: "intermediate" },
+      { name: "Decline Push Ups",           icon: "📉", cue: "Feet elevated on floor object, lower chest down", level: "intermediate" },
+      { name: "Close Grip Push Ups",        icon: "🤜", cue: "Hands under chest, elbows tight to sides", level: "intermediate" },
+      { name: "Knuckle Push Ups",           icon: "✊", cue: "Push up on fists to build wrist strength", level: "intermediate" },
+      { name: "Sphinx Push Ups",            icon: "🗿", cue: "Lower from plank to forearms, press back up", level: "intermediate" },
+      { name: "Elevated Pike Push Up",      icon: "⛰️", cue: "Hips high, bend elbows to lower head down", level: "intermediate" },
+      { name: "Side-to-Side Push Ups",      icon: "↔️", cue: "Walk hands left and right between reps", level: "intermediate" },
+      { name: "Tricep Push Ups",            icon: "💪", cue: "Elbows glide back along ribs as you lower", level: "intermediate" },
+      { name: "Forearm Plank Push Ups",     icon: "🔝", cue: "Alternate pressing up from forearms to hands", level: "intermediate" },
+      { name: "Tricep Push Up Negative",    icon: "📉", cue: "Lower with elbows back over three seconds", level: "intermediate" },
+      { name: "Push Up to Side Plank",      icon: "🔀", cue: "After each push up, rotate into side plank", level: "intermediate" },
+      { name: "Archer Push Ups",            icon: "🏹", cue: "Shift weight side to side in wide push up", level: "advanced" },
+      { name: "Pseudo Planche Push Up",     icon: "🤸", cue: "Lean forward over hands, push up slowly", level: "advanced" },
+      { name: "Superman Push Ups",          icon: "🦸", cue: "Explode up and extend arms fully forward", level: "advanced" },
+      { name: "One Arm Push Up Negative",   icon: "1️⃣", cue: "Lower slowly on one arm, push up on two", level: "advanced" },
+      { name: "Handstand Hold",             icon: "🙃", cue: "Kick into wall handstand, hold straight body", level: "advanced" },
+      { name: "Clapping Push Ups",          icon: "👏", cue: "Explode off ground and clap before landing", level: "advanced" },
+      { name: "Typewriter Push Ups",        icon: "⌨️", cue: "Slide chest left to right along the floor", level: "advanced" },
+      { name: "Fingertip Push Ups",         icon: "🖖", cue: "Balance on fingertips, lower chest slowly", level: "advanced" },
+      { name: "Straddle Planche Lean",      icon: "🤸", cue: "Lean far forward over hands, legs wide out", level: "advanced" },
+      { name: "Wall Handstand Push Up",     icon: "🙃", cue: "Lower head toward floor in a wall handstand", level: "advanced" },
+    ],
+    legs: [
+      { name: "Squats",                     icon: "🏋️", cue: "Knees over toes, chest up, sit back", level: "beginner" },
+      { name: "Lunges",                     icon: "🦶", cue: "Alternate legs, knee just above floor", level: "beginner" },
+      { name: "Glute Bridges",              icon: "🌉", cue: "Drive hips up, squeeze glutes at top", level: "beginner" },
+      { name: "Calf Raises",                icon: "🦵", cue: "Rise onto toes, slow and controlled", level: "beginner" },
+      { name: "Wall Sit",                   icon: "🧱", cue: "Hold 90-degree sit position against wall", level: "beginner" },
+      { name: "Sumo Squat",                 icon: "🤼", cue: "Wide stance, toes out, squat down deep", level: "beginner" },
+      { name: "Reverse Lunges",             icon: "⬅️", cue: "Step back, lower back knee toward floor", level: "beginner" },
+      { name: "Squat Pulse",                icon: "📳", cue: "Hold low squat, pulse up and down slightly", level: "beginner" },
+      { name: "Frog Squat",                 icon: "🐸", cue: "Deep squat with elbows pressing knees out", level: "beginner" },
+      { name: "Standing Leg Circles",       icon: "⭕", cue: "Balance and circle one leg slowly in the air", level: "beginner" },
+      { name: "Hip Circles",                icon: "🌀", cue: "Standing, rotate hips in large slow circles", level: "beginner" },
+      { name: "Sit to Stand",               icon: "🪑", cue: "From seated on floor, stand using no hands", level: "beginner" },
+      { name: "Standing Hip Abduction",     icon: "↔️", cue: "Balance and raise one leg directly to side", level: "beginner" },
+      { name: "Jump Squats",                icon: "⬆️", cue: "Explode up, land softly and sink back", level: "intermediate" },
+      { name: "Bulgarian Split Squat",      icon: "🪑", cue: "Rear foot elevated on floor, lower front knee", level: "intermediate" },
+      { name: "Lateral Lunges",             icon: "↗️", cue: "Step wide to side, sit into one hip", level: "intermediate" },
+      { name: "Single Leg Glute Bridge",    icon: "🦵", cue: "One leg raised, drive opposite hip upward", level: "intermediate" },
+      { name: "Curtsy Lunge",               icon: "🎭", cue: "Cross leg behind and to the side, lower down", level: "intermediate" },
+      { name: "Broad Jump",                 icon: "🦘", cue: "Swing arms and jump as far forward as possible", level: "intermediate" },
+      { name: "Hamstring Curl",             icon: "🦿", cue: "Lie on back, dig heels down to pull hips up", level: "intermediate" },
+      { name: "Tuck Jump",                  icon: "🦎", cue: "Jump and pull both knees to chest at peak", level: "intermediate" },
+      { name: "Deficit Reverse Lunge",      icon: "⬇️", cue: "Step back into deep lunge from tiptoe stance", level: "intermediate" },
+      { name: "Lateral Squat Walk",         icon: "🦀", cue: "Step sideways in squat position across floor", level: "intermediate" },
+      { name: "Single Leg Calf Raise",      icon: "🦶", cue: "Rise onto one tiptoe slowly, lower with control", level: "intermediate" },
+      { name: "Pistol Squat",               icon: "🔫", cue: "One leg extended, squat deep on other leg", level: "advanced" },
+      { name: "Skater Squat",               icon: "⛸️", cue: "Single leg squat, reach opposite hand to floor", level: "advanced" },
+      { name: "Plyometric Lunge",           icon: "💥", cue: "Jump and switch legs in lunge position midair", level: "advanced" },
+      { name: "Sissy Squat",                icon: "🎪", cue: "Lean back on toes and lower with straight hips", level: "advanced" },
+      { name: "Shrimp Squat",               icon: "🦐", cue: "Grab rear foot, squat on one leg fully down", level: "advanced" },
+      { name: "Natural Leg Extension",      icon: "📐", cue: "Kneel and lean back slowly on both knees", level: "advanced" },
+    ],
+    back: [
+      { name: "Superman",                   icon: "🦸", cue: "Lie face down, lift arms and legs together", level: "beginner" },
+      { name: "Bird Dog",                   icon: "🐦", cue: "Opposite arm and leg, keep hips square", level: "beginner" },
+      { name: "Cat Cow",                    icon: "🐱", cue: "Arch and round your spine slowly", level: "beginner" },
+      { name: "Back Extensions",            icon: "📐", cue: "Face down, lift chest off floor", level: "beginner" },
+      { name: "Dead Bug",                   icon: "🪲", cue: "Lower opposite limbs while keeping back flat", level: "beginner" },
+      { name: "Reverse Snow Angels",        icon: "👼", cue: "Face down, sweep arms up and down off floor", level: "beginner" },
+      { name: "Prone Cobra",                icon: "🐍", cue: "Lift chest and rotate arms palms-out off floor", level: "beginner" },
+      { name: "Y Raises",                   icon: "🤷", cue: "Lie prone, raise arms into Y shape overhead", level: "beginner" },
+      { name: "T Raises",                   icon: "✈️", cue: "Lift arms out to sides in prone T position", level: "beginner" },
+      { name: "Swimmer Kicks",              icon: "🏊", cue: "Flutter opposite arms and legs while prone", level: "beginner" },
+      { name: "Quadruped Hip Extension",    icon: "🐾", cue: "On all fours, kick one leg straight back", level: "beginner" },
+      { name: "Scapular Push Up",           icon: "🦷", cue: "In plank, pinch and spread shoulder blades only", level: "beginner" },
+      { name: "Prone Lat Pulldown",         icon: "🧲", cue: "Lie prone, pull straight arms from overhead to hips", level: "beginner" },
+      { name: "Lying Hip Hinge",            icon: "📏", cue: "Kneel and hinge forward, squeezing glutes back up", level: "beginner" },
+      { name: "Side Lying Hip Abduction",   icon: "📐", cue: "Lie on side, raise top leg toward ceiling", level: "beginner" },
+      { name: "W Raises",                   icon: "🦅", cue: "Pull elbows back in W shape while lying prone", level: "intermediate" },
+      { name: "Glute Bridge March",         icon: "🥾", cue: "In bridge, alternate lifting knees to chest", level: "intermediate" },
+      { name: "Arch Hold Pulse",            icon: "🌊", cue: "Prone, lift limbs and pulse them up repeatedly", level: "intermediate" },
+      { name: "Good Mornings",              icon: "🌅", cue: "Hinge at hips, keep back flat as torso dips", level: "intermediate" },
+      { name: "Crab Bridge Hold",           icon: "🦀", cue: "Face up, lift hips and hold elevated bridge", level: "intermediate" },
+      { name: "Prone Pull Through",         icon: "🧲", cue: "Prone, sweep arms from overhead to hips", level: "intermediate" },
+      { name: "Single Arm Bird Dog",        icon: "🦅", cue: "Extend one arm only, hold and switch", level: "intermediate" },
+      { name: "Glute Bridge Walk Out",      icon: "🚶", cue: "In bridge, walk feet out then back in", level: "intermediate" },
+      { name: "Reverse Table Top Hold",     icon: "🔼", cue: "Face up, push hips high and hold flat", level: "intermediate" },
+      { name: "Prone T Hold",               icon: "✈️", cue: "Lift arms to T, squeeze and hold five seconds", level: "intermediate" },
+      { name: "Candlestick Roll",           icon: "🕯️", cue: "Roll back to shoulders then spring up to stand", level: "advanced" },
+      { name: "Back Lever Tuck Hold",       icon: "🔄", cue: "Hang and tilt body horizontal face down", level: "advanced" },
+      { name: "Hollow to Arch Swing",       icon: "🌊", cue: "Alternate hollow and arch body shapes rhythmically", level: "advanced" },
+      { name: "Reverse Hyperextension Pulse", icon: "⬆️", cue: "Prone on floor, pulse both legs up repeatedly", level: "advanced" },
+      { name: "Single Leg Good Morning",    icon: "🌅", cue: "Balance on one leg, hinge flat back forward", level: "advanced" },
+      { name: "Prone Hip Shift",            icon: "↔️", cue: "Prone Superman hold, shift hips side to side", level: "advanced" },
+      { name: "Segmental Cat Cow",          icon: "🐄", cue: "Articulate spine one vertebra at a time slowly", level: "advanced" },
+      { name: "Back Plank Hold",            icon: "🏗️", cue: "Face up, lift body into rigid reverse plank", level: "advanced" },
+      { name: "Skin the Cat Tuck",          icon: "🐱", cue: "Hang and rotate legs through arms overhead", level: "advanced" },
+    ],
+    fullbody: [
+      { name: "Bear Crawl",                 icon: "🐻", cue: "Knees hover 1 inch off floor, move forward", level: "beginner" },
+      { name: "Inchworm",                   icon: "🐛", cue: "Walk hands out to plank, then walk feet in", level: "beginner" },
+      { name: "Star Jumps",                 icon: "⭐", cue: "Jump with arms and legs wide simultaneously", level: "beginner" },
+      { name: "World's Greatest Stretch",   icon: "🌍", cue: "Lunge with twist, reach arm up to sky", level: "beginner" },
+      { name: "Traveling Lunge",            icon: "🚶", cue: "Step forward into lunge continuously across floor", level: "beginner" },
+      { name: "Squat to Stand",             icon: "🧍", cue: "Hinge to touch toes, then squat deep and stand", level: "beginner" },
+      { name: "Flowing Yoga Flow",          icon: "🧘", cue: "Move through plank, cobra and downdog smoothly", level: "beginner" },
+      { name: "Reach and Squat",            icon: "🙌", cue: "Squat down and reach arms straight overhead", level: "beginner" },
+      { name: "Standing Bird Dog",          icon: "🦤", cue: "Stand, extend opposite arm and leg, hold", level: "beginner" },
+      { name: "Hip Hinge to Reach",         icon: "🖐️", cue: "Hinge forward and reach hands toward the floor", level: "beginner" },
+      { name: "Burpees",                    icon: "🔥", cue: "Drop, push up, jump up — full power", level: "intermediate" },
+      { name: "Mountain Climbers",          icon: "🧗", cue: "Drive knees to chest alternately, fast", level: "intermediate" },
+      { name: "Sprawl",                     icon: "🐊", cue: "Shoot hips to floor then spring feet back under", level: "intermediate" },
+      { name: "Squat Thrust",               icon: "🧨", cue: "Jump feet out to plank, back in, then stand", level: "intermediate" },
+      { name: "Plank to Squat",             icon: "🔀", cue: "Jump feet outside hands from plank to squat", level: "intermediate" },
+      { name: "Crab Reach",                 icon: "🦀", cue: "In crab position, reach one hand to ceiling", level: "intermediate" },
+      { name: "Lateral Bear Crawl",         icon: "🐻", cue: "Bear position, crawl sideways keeping hips low", level: "intermediate" },
+      { name: "Donkey Kick",                icon: "🫏", cue: "From plank, kick both feet up and back", level: "intermediate" },
+      { name: "Lunge with Twist",           icon: "🌀", cue: "Step into lunge, rotate torso over front leg", level: "intermediate" },
+      { name: "Hip Escape",                 icon: "🧲", cue: "Bridge up and shoot hips to one side", level: "intermediate" },
+      { name: "Plank to Push Up Walk Out",  icon: "🚶", cue: "Walk hands out to plank, do push up, walk back", level: "intermediate" },
+      { name: "Get Up Sit Up",              icon: "⏫", cue: "From flat, use momentum to stand fully up", level: "intermediate" },
+      { name: "Reverse Lunge to Kick",      icon: "🥋", cue: "Lunge back then drive knee up into front kick", level: "intermediate" },
+      { name: "Plank Walkout Burpee",       icon: "🔁", cue: "Walk to plank, hold, walk back and stand up", level: "intermediate" },
+      { name: "Turkish Get Up",             icon: "🧎", cue: "Rise from lying to standing in controlled stages", level: "advanced" },
+      { name: "Breakdancer",                icon: "💃", cue: "Rotate hips and thread legs under body", level: "advanced" },
+      { name: "Push Up to Squat Thrust",    icon: "🔁", cue: "Do a push up, then jump feet to hands", level: "advanced" },
+      { name: "Kick Through",               icon: "🦵", cue: "From bear crawl, thread leg under and kick out", level: "advanced" },
+      { name: "360 Squat Jump",             icon: "🔃", cue: "Jump and rotate 360 degrees before landing", level: "advanced" },
+      { name: "Animal Flow Combo",          icon: "🦁", cue: "Link beast, crab and ape positions fluidly", level: "advanced" },
+      { name: "Single Leg Burpee",          icon: "1️⃣", cue: "Full burpee landing and jumping on one leg", level: "advanced" },
+      { name: "Plyometric Bear Crawl",      icon: "🐾", cue: "Explode hands and feet off floor each step", level: "advanced" },
+    ],
+    cardio: [
+      { name: "High Knees",                 icon: "🏃", cue: "Drive knees to waist height, pump arms", level: "beginner" },
+      { name: "Jumping Jacks",              icon: "🙆", cue: "Full arm sweep overhead, feet wide", level: "beginner" },
+      { name: "Butt Kicks",                 icon: "👟", cue: "Kick heels up towards your glutes", level: "beginner" },
+      { name: "Speed Bobs",                 icon: "🥊", cue: "Quick side-to-side weight shifts, stay low", level: "beginner" },
+      { name: "Lateral Shuffles",           icon: "👟", cue: "Push off feet to shuffle side to side fast", level: "beginner" },
+      { name: "Jump Rope Simulation",       icon: "🪢", cue: "Bounce on toes and rotate wrists as if jumping rope", level: "beginner" },
+      { name: "Lateral Hops",               icon: "🏃", cue: "Jump side to side over an imaginary line", level: "beginner" },
+      { name: "Ankle Hops",                 icon: "🦶", cue: "Bounce rapidly with minimal knee bend", level: "beginner" },
+      { name: "Seal Jacks",                 icon: "🦭", cue: "Like jumping jacks but arms swing front to back", level: "beginner" },
+      { name: "March in Place",             icon: "🥁", cue: "Lift knees to waist height, swing arms naturally", level: "beginner" },
+      { name: "Step Touch",                 icon: "👣", cue: "Step side to side, touching feet together rhythmically", level: "beginner" },
+      { name: "Skaters",                    icon: "⛸️", cue: "Side leap, touch down hand, bound across", level: "intermediate" },
+      { name: "Switch Kicks",               icon: "🥋", cue: "Alternate kicking legs up to hip height fast", level: "intermediate" },
+      { name: "Squat Jacks",                icon: "🏋️", cue: "Jump feet wide to squat, then back together", level: "intermediate" },
+      { name: "Plank Jacks",                icon: "⚡", cue: "In plank, jump feet wide and back together", level: "intermediate" },
+      { name: "Cross Jacks",                icon: "✖️", cue: "Jump and cross arms and legs simultaneously", level: "intermediate" },
+      { name: "Frog Jumps",                 icon: "🐸", cue: "Squat low then leap forward landing in squat", level: "intermediate" },
+      { name: "Power Skips",                icon: "🚀", cue: "Skip with maximum height and knee drive", level: "intermediate" },
+      { name: "Ali Shuffle",                icon: "🥊", cue: "Rapid alternating foot shuffle staying light", level: "intermediate" },
+      { name: "Carioca",                    icon: "🌺", cue: "Crossover side step, alternating front and back", level: "intermediate" },
+      { name: "Reverse Mountain Climbers",  icon: "🔙", cue: "Face up in crab, drive knees to chest fast", level: "intermediate" },
+      { name: "Box Jumps",                  icon: "📦", cue: "Jump forward and up, land softly and controlled", level: "intermediate" },
+      { name: "Explosive Box Steps",        icon: "💨", cue: "Drive knee high explosively on each step up", level: "intermediate" },
+      { name: "Plyo Push Up",               icon: "💥", cue: "Push up explosively so hands leave the floor", level: "advanced" },
+      { name: "360 Hops",                   icon: "🌀", cue: "Hop and rotate 180 degrees each jump", level: "advanced" },
+      { name: "Lunge Jumps",                icon: "🏆", cue: "Alternate lunge jumps with an explosive switch", level: "advanced" },
+      { name: "Invisible Jump Rope Double Under", icon: "🌪️", cue: "Faster bounce simulating double rotation skips", level: "advanced" },
+      { name: "Burpee Broad Jump",          icon: "🚀", cue: "Do a burpee then leap as far as possible", level: "advanced" },
+      { name: "Triple Jump Hop",            icon: "🦘", cue: "Hop, bound, and jump in one flowing sequence", level: "advanced" },
+    ],
+  };
+
+  let selectedCategories = [];
+  let selectedDifficulty = 'all';
+  let durationMins = 5;
+  let workoutQueue = [];
+  let currentIndex = 0;
+  let timeLeft = 0;
+  let timerInterval = null;
+  let isPaused = false;
+  let totalSeconds = 0;
+  let elapsed = 0;
+
+  const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+  function playBeep(frequency, duration, type = 'sine') {
+    const oscillator = audioCtx.createOscillator();
+    const gainNode = audioCtx.createGain();
+    oscillator.connect(gainNode);
+    gainNode.connect(audioCtx.destination);
+    oscillator.frequency.value = frequency;
+    oscillator.type = type;
+    gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+    oscillator.start(audioCtx.currentTime);
+    oscillator.stop(audioCtx.currentTime + duration);
+  }
+
+  function playExerciseStart() { playBeep(880, 0.15); }
+  function playRestStart() { playBeep(440, 0.3); }
+  function playWorkoutComplete() {
+    playBeep(523, 0.15);
+   setTimeout(() => playBeep(659, 0.15), 150);
+    setTimeout(() => playBeep(784, 0.4), 300);
+  }
+  
+  // ── WORKOUT LOGGING ──────────────────────────────────────────────
+function saveWorkout() {
+  const log = JSON.parse(localStorage.getItem('quickfit_log') || '[]');
+  log.push({
+    date: new Date().toISOString(),
+    categories: selectedCategories,
+    difficulty: selectedDifficulty,
+    duration: durationMins
+  });
+  localStorage.setItem('quickfit_log', JSON.stringify(log));
+}
+
+function getWorkoutLog() {
+  return JSON.parse(localStorage.getItem('quickfit_log') || '[]');
+}
+
+function getTotalWorkouts() {
+  return getWorkoutLog().length;
+}
+
+function getStreak() {
+  const log = getWorkoutLog();
+  if (log.length === 0) return 0;
+  // Build a Set of unique date strings (faster lookups)
+  const dateSet = new Set(log.map(w => new Date(w.date).toDateString()));
+  const today = new Date().toDateString();
+  const yesterday = new Date(Date.now() - 86400000).toDateString();
+  // If no workout today AND no workout yesterday → streak is broken
+  if (!dateSet.has(today) && !dateSet.has(yesterday)) return 0;
+  // Decide where to start counting:
+  // If you worked out today, start from today (i = 0)
+  // If not, start from yesterday (i = 1) — give yourself grace for today
+  let startDay = dateSet.has(today) ? 0 : 1;
+  let streak = 0;
+  for (let i = startDay; i < 365; i++) {
+    const d = new Date(Date.now() - i * 86400000).toDateString();
+    if (dateSet.has(d)) {
+      streak++;
+    } else {
+      break; // Gap found — stop counting
+    }
+  }
+
+  return streak;
+}
+  // ── ACHIEVEMENT SYSTEM ──────────────────────────────────────────
+
+const ACHIEVEMENTS = [
+  // 🏋️ Workout count milestones
+  { id: 'first_sweat',     name: 'First Sweat',      icon: '💧', desc: 'Complete your first workout',
+    check: (s) => s.total >= 1 },
+  { id: 'high_five',       name: 'High Five',         icon: '🖐️', desc: 'Complete 5 workouts',
+    check: (s) => s.total >= 5 },
+  { id: 'double_digits',   name: 'Double Digits',     icon: '🔟', desc: 'Complete 10 workouts',
+    check: (s) => s.total >= 10 },
+  { id: 'quarter_century', name: 'Quarter Century',   icon: '🥈', desc: 'Complete 25 workouts',
+    check: (s) => s.total >= 25 },
+  { id: 'half_century',    name: 'Half Century',      icon: '🥇', desc: 'Complete 50 workouts',
+    check: (s) => s.total >= 50 },
+  { id: 'centurion',       name: 'Centurion',         icon: '💯', desc: 'Complete 100 workouts',
+    check: (s) => s.total >= 100 },
+
+  // 🔥 Streak milestones
+  { id: 'hat_trick',       name: 'Hat Trick',         icon: '🎩', desc: '3-day workout streak',
+    check: (s) => s.streak >= 3 },
+  { id: 'week_warrior',    name: 'Week Warrior',      icon: '📅', desc: '7-day workout streak',
+    check: (s) => s.streak >= 7 },
+  { id: 'fortnight_fire',  name: 'Fortnight Fire',    icon: '🔥', desc: '14-day workout streak',
+    check: (s) => s.streak >= 14 },
+  { id: 'monthly_machine', name: 'Monthly Machine',   icon: '🤖', desc: '30-day workout streak',
+    check: (s) => s.streak >= 30 },
+
+  // 🗺️ Category explorer
+  { id: 'core_crusher',    name: 'Core Crusher',      icon: '🔥', desc: 'Complete a Core workout',
+    check: (s) => s.categories.has('core') },
+  { id: 'arm_day',         name: 'Arm Day',           icon: '💪', desc: 'Complete an Arms workout',
+    check: (s) => s.categories.has('arms') },
+  { id: 'leg_day',         name: 'Never Skip Leg Day',icon: '🦵', desc: 'Complete a Legs workout',
+    check: (s) => s.categories.has('legs') },
+  { id: 'got_your_back',   name: 'Got Your Back',     icon: '🧱', desc: 'Complete a Back workout',
+    check: (s) => s.categories.has('back') },
+  { id: 'full_send',       name: 'Full Send',         icon: '⚡', desc: 'Complete a Full Body workout',
+    check: (s) => s.categories.has('fullbody') },
+  { id: 'cardio_king',     name: 'Cardio King',       icon: '🏃', desc: 'Complete a Cardio workout',
+    check: (s) => s.categories.has('cardio') },
+  { id: 'well_rounded',    name: 'Well Rounded',      icon: '🌍', desc: 'Try all 6 categories',
+    check: (s) => s.categories.size >= 6 },
+
+  // 🎯 Difficulty & Duration
+  { id: 'level_up',        name: 'Level Up',          icon: '📈', desc: 'Complete an Advanced workout',
+    check: (s) => s.difficulties.has('advanced') },
+  { id: 'ten_min_titan',   name: '10-Min Titan',      icon: '⏱️', desc: 'Complete a 10-min workout',
+    check: (s) => s.maxDuration >= 10 },
+
+  // 🎉 Fun / Lifestyle
+  { id: 'double_tap',      name: 'Double Tap',        icon: '✌️', desc: '2 workouts in one day',
+    check: (s) => s.maxWorkoutsInDay >= 2 },
+  { id: 'early_bird',      name: 'Early Bird',        icon: '🐦', desc: 'Work out before 7 AM',
+    check: (s) => s.earlyBird },
+  { id: 'night_owl',       name: 'Night Owl',         icon: '🦉', desc: 'Work out after 10 PM',
+    check: (s) => s.nightOwl },
+];
+  // Build stats object from the full workout log
+function buildStats() {
+  const log = getWorkoutLog();
+  const categories = new Set();
+  const difficulties = new Set();
+  let maxDuration = 0;
+  let earlyBird = false;
+  let nightOwl = false;
+
+  // Count workouts per day (to detect "2 in one day")
+  const dayCount = {};
+
+  log.forEach(w => {
+    // Each workout's categories is an array like ['core', 'arms']
+    w.categories.forEach(c => categories.add(c));
+    difficulties.add(w.difficulty);
+    if (w.duration > maxDuration) maxDuration = w.duration;
+
+    const date = new Date(w.date);
+    const dayKey = date.toDateString();
+    dayCount[dayKey] = (dayCount[dayKey] || 0) + 1;
+
+    const hour = date.getHours();
+    if (hour < 7) earlyBird = true;
+    if (hour >= 22) nightOwl = true;
+  });
+
+  const maxWorkoutsInDay = Object.keys(dayCount).length > 0
+    ? Math.max(...Object.values(dayCount))
+    : 0;
+
+  return {
+    total: log.length,
+    streak: getStreak(),
+    categories,        // a Set like {'core', 'arms'}
+    difficulties,      // a Set like {'beginner', 'advanced'}
+    maxDuration,
+    maxWorkoutsInDay,
+    earlyBird,
+    nightOwl,
+  };
+}
+  // Get list of achievement IDs already unlocked
+function getUnlockedIds() {
+  return JSON.parse(localStorage.getItem('quickfit_achievements') || '[]');
+}
+
+// Save unlocked IDs to localStorage
+function saveUnlockedIds(ids) {
+  localStorage.setItem('quickfit_achievements', JSON.stringify(ids));
+}
+
+// Run after every workout — check all achievements
+function checkAchievements() {
+  const stats = buildStats();
+  const unlocked = getUnlockedIds();
+  const newlyUnlocked = [];
+
+  ACHIEVEMENTS.forEach(a => {
+    // Skip if already unlocked
+    if (unlocked.includes(a.id)) return;
+
+    // Run the check function
+    if (a.check(stats)) {
+      unlocked.push(a.id);
+      newlyUnlocked.push(a);
+    }
+  });
+
+  // If anything new was unlocked, save and show toasts
+  if (newlyUnlocked.length > 0) {
+    saveUnlockedIds(unlocked);
+    // Stagger toasts so they don't overlap
+    newlyUnlocked.forEach((a, i) => {
+      setTimeout(() => showAchievementToast(a), i * 2000);
+    });
+  }
+}
+
+// Show the sliding toast notification
+function showAchievementToast(achievement) {
+  // Play a celebratory sound
+  playBeep(523, 0.1);
+  setTimeout(() => playBeep(659, 0.1), 100);
+  setTimeout(() => playBeep(880, 0.2), 200);
+
+  const toast = document.createElement('div');
+  toast.className = 'achievement-toast';
+  toast.innerHTML = `
+    <span class="achievement-toast-icon">${achievement.icon}</span>
+    <div>
+      <div class="achievement-toast-title">🏅 Achievement Unlocked!</div>
+      <div class="achievement-toast-name">${achievement.name}</div>
+      <div class="achievement-toast-desc">${achievement.desc}</div>
+    </div>
+  `;
+  document.body.appendChild(toast);
+
+  // Tiny delay then slide in (requestAnimationFrame ensures CSS transition works)
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      toast.classList.add('show');
+    });
+  });
+
+  // Slide out and remove after 3 seconds
+  setTimeout(() => {
+    toast.classList.remove('show');
+    setTimeout(() => toast.remove(), 500);
+  }, 3000);
+}
+  // Get list of achievement IDs already unlocked
+function getUnlockedIds() {
+  return JSON.parse(localStorage.getItem('quickfit_achievements') || '[]');
+}
+
+// Save unlocked IDs to localStorage
+function saveUnlockedIds(ids) {
+  localStorage.setItem('quickfit_achievements', JSON.stringify(ids));
+}
+
+// Run after every workout — check all achievements
+function checkAchievements() {
+  const stats = buildStats();
+  const unlocked = getUnlockedIds();
+  const newlyUnlocked = [];
+
+  ACHIEVEMENTS.forEach(a => {
+    // Skip if already unlocked
+    if (unlocked.includes(a.id)) return;
+
+    // Run the check function
+    if (a.check(stats)) {
+      unlocked.push(a.id);
+      newlyUnlocked.push(a);
+    }
+  });
+
+  // If anything new was unlocked, save and show toasts
+  if (newlyUnlocked.length > 0) {
+    saveUnlockedIds(unlocked);
+    // Stagger toasts so they don't overlap
+    newlyUnlocked.forEach((a, i) => {
+      setTimeout(() => showAchievementToast(a), i * 2000);
+    });
+  }
+}
+
+// Show the sliding toast notification
+function showAchievementToast(achievement) {
+  // Play a celebratory sound
+  playBeep(523, 0.1);
+  setTimeout(() => playBeep(659, 0.1), 100);
+  setTimeout(() => playBeep(880, 0.2), 200);
+
+  const toast = document.createElement('div');
+  toast.className = 'achievement-toast';
+  toast.innerHTML = `
+    <span class="achievement-toast-icon">${achievement.icon}</span>
+    <div>
+      <div class="achievement-toast-title">🏅 Achievement Unlocked!</div>
+      <div class="achievement-toast-name">${achievement.name}</div>
+      <div class="achievement-toast-desc">${achievement.desc}</div>
+    </div>
+  `;
+  document.body.appendChild(toast);
+
+  // Tiny delay then slide in (requestAnimationFrame ensures CSS transition works)
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      toast.classList.add('show');
+    });
+  });
+
+  // Slide out and remove after 3 seconds
+  setTimeout(() => {
+    toast.classList.remove('show');
+    setTimeout(() => toast.remove(), 500);
+  }, 3000);
+}
+  // Show the achievements gallery
+function showAchievements() {
+  document.getElementById('setup-screen').style.display = 'none';
+  document.getElementById('achievement-screen').classList.add('active');
+
+  const unlocked = getUnlockedIds();
+  const grid = document.getElementById('achievement-grid');
+  const progress = document.getElementById('achievement-progress');
+
+  progress.textContent = `${unlocked.length} / ${ACHIEVEMENTS.length} unlocked`;
+
+  grid.innerHTML = ACHIEVEMENTS.map(a => {
+    const isUnlocked = unlocked.includes(a.id);
+    return `
+      <div class="achievement-card ${isUnlocked ? 'unlocked' : 'locked'}">
+        <span class="a-icon">${a.icon}</span>
+        <div class="a-name">${a.name}</div>
+        <div class="a-desc">${isUnlocked ? a.desc : '???'}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+// Go back to setup screen
+function hideAchievements() {
+  document.getElementById('achievement-screen').classList.remove('active');
+  document.getElementById('setup-screen').style.display = 'flex';
+}
+  function setDifficulty(el, level) {
+    selectedDifficulty = level;
+    document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('selected'));
+    el.classList.add('selected');
+    if (selectedCategories.length > 0) buildPreview();
+  }
+
+  function updateDuration(val) {
+    durationMins = parseInt(val);
+    document.getElementById('duration-display').textContent = val + ' min' + (val > 1 ? 's' : '');
+    if (selectedCategories.length > 0) buildPreview();
+  }
+
+  function toggleCategory(el, cat) {
+    const idx = selectedCategories.indexOf(cat);
+    if (idx === -1) { selectedCategories.push(cat); el.classList.add('selected'); }
+    else { selectedCategories.splice(idx, 1); el.classList.remove('selected'); }
+    buildPreview();
+  }
+
+  function buildPreview() {
+    const previewBox = document.getElementById('preview-box');
+    const beginBtn = document.getElementById('begin-btn');
+    const previewTitle = document.getElementById('preview-title');
+    if (selectedCategories.length === 0) {
+      previewBox.classList.remove('visible');
+      beginBtn.classList.remove('visible');
+      previewTitle.style.display = 'none';
+      return;
+    }
+    let pool = [];
+    selectedCategories.forEach(cat => { pool = pool.concat(LIBRARY[cat].map(e => ({ ...e, cat }))); });
+    if (selectedDifficulty !== 'all') {
+      pool = pool.filter(e => e.level === selectedDifficulty);
+    }
+    if (pool.length === 0) {
+      previewBox.innerHTML = '<p style="color:#888; font-size:0.85rem;">No exercises found for this combination. Try a different selection.</p>';
+      previewBox.classList.add('visible');
+      beginBtn.classList.remove('visible');
+      previewTitle.style.display = 'block';
+      return;
+    }
+    pool = pool.sort(() => Math.random() - 0.5);
+
+    // Build queue fitting within duration using randomised exercise durations
+    workoutQueue = [];
+    let timeUsed = 0;
+    const targetSeconds = durationMins * 60;
+    for (let i = 0; i < pool.length && timeUsed < targetSeconds; i++) {
+      const ex = pool[i];
+      const exLevel = selectedDifficulty === 'all' ? ex.level : selectedDifficulty;
+      const exSecs = getExDuration(exLevel);
+      const restSecs = getRestDuration(exLevel);
+      if (timeUsed + exSecs > targetSeconds) break;
+      workoutQueue.push({ ...ex, seconds: exSecs, isRest: false });
+      timeUsed += exSecs;
+      if (timeUsed + restSecs < targetSeconds && i < pool.length - 1) {
+        workoutQueue.push({ name: "Rest", icon: "💤", cue: "Catch your breath", seconds: restSecs, isRest: true });
+        timeUsed += restSecs;
+      }
+    }
+
+    if (workoutQueue.length === 0) {
+      previewBox.innerHTML = '<p style="color:#888; font-size:0.85rem;">Duration too short. Try 2 mins or more.</p>';
+      previewBox.classList.add('visible');
+      beginBtn.classList.remove('visible');
+      previewTitle.style.display = 'block';
+      return;
+    }
+
+    totalSeconds = workoutQueue.reduce((sum, e) => sum + e.seconds, 0);
+    const exercises = workoutQueue.filter(e => !e.isRest);
+    const levelColors = { beginner: 'level-beginner', intermediate: 'level-intermediate', advanced: 'level-advanced' };
+
+    previewBox.innerHTML = `<h3>📋 ${exercises.length} exercises · ~${durationMins} min</h3>` +
+      exercises.map(ex =>
+        `<div class="workout-item">
+          <div class="workout-icon">${ex.icon}</div>
+          <div class="workout-info">
+            <div class="name">${ex.name} <span class="level-badge ${levelColors[ex.level]}">${ex.level}</span></div>
+            <div class="cue">${ex.cue}</div>
+          </div>
+          <div class="workout-duration">${ex.seconds}s</div>
+        </div>`
+      ).join('');
+    previewBox.classList.add('visible');
+    beginBtn.classList.add('visible');
+    previewTitle.style.display = 'block';
+  }
+
+  function startWorkout() {
+    audioCtx.resume();
+    document.getElementById('setup-screen').style.display = 'none';
+    document.getElementById('complete-screen').classList.remove('active');
+    document.getElementById('workout-screen').classList.add('active');
+    currentIndex = 0; elapsed = 0; isPaused = false;
+    loadExercise(0);
+  }
+
+  function loadExercise(idx) {
+    if (idx >= workoutQueue.length) { showComplete(); return; }
+    const ex = workoutQueue[idx];
+    timeLeft = ex.seconds;
+    const restLabel = document.getElementById('rest-label');
+    const nextUp = document.getElementById('next-up');
+    if (ex.isRest) {
+      restLabel.style.display = 'block';
+      const nextEx = workoutQueue[idx + 1];
+      nextUp.textContent = nextEx ? 'Next: ' + nextEx.name : '';
+    } else {
+      restLabel.style.display = 'none';
+      nextUp.textContent = '';
+    }
+    document.getElementById('ex-icon').textContent = ex.icon;
+    document.getElementById('ex-name').textContent = ex.isRest ? '' : ex.name;
+    document.getElementById('ex-cue').textContent = ex.cue;
+    document.getElementById('timer-num').textContent = timeLeft;
+    const exNum = Math.floor(idx / 2) + 1;
+    const exTotal = Math.ceil(workoutQueue.length / 2);
+    document.getElementById('ex-counter').textContent =
+      ex.isRest ? '' : `Exercise ${exNum} of ${exTotal} · ${ex.seconds}s`;
+    updateProgress();
+    if (ex.isRest) { playRestStart(); } else { playExerciseStart(); }
+    clearInterval(timerInterval);
+    timerInterval = setInterval(tick, 1000);
+  }
+
+  function tick() {
+    if (isPaused) return;
+    timeLeft--; elapsed++;
+    document.getElementById('timer-num').textContent = timeLeft;
+    updateProgress();
+    if (timeLeft <= 0) { currentIndex++; loadExercise(currentIndex); }
+  }
+
+  function updateProgress() {
+    const pct = Math.min(100, (elapsed / totalSeconds) * 100);
+    document.getElementById('progress-fill').style.width = pct + '%';
+  }
+
+  function togglePause() {
+    isPaused = !isPaused;
+    document.getElementById('pause-btn').textContent = isPaused ? '▶ Resume' : '⏸ Pause';
+  }
+
+  function skipExercise() {
+  clearInterval(timerInterval);
+  // Credit the FULL duration of the current exercise (as if you finished it)
+  const currentEx = workoutQueue[currentIndex];
+  const timeSpentHere = currentEx.seconds - timeLeft;
+  elapsed += (currentEx.seconds - timeSpentHere); // Add remaining time
+  currentIndex++;
+  if (currentIndex >= workoutQueue.length) { showComplete(); return; }
+  loadExercise(currentIndex);
+}
+
+  function previousExercise() {
+  clearInterval(timerInterval);
+  // Subtract the time we've spent on the current exercise
+  const currentEx = workoutQueue[currentIndex];
+  const timeSpentHere = currentEx.seconds - timeLeft;
+  elapsed -= timeSpentHere;
+  // Go back one step (but not before the start)
+  if (currentIndex > 0) {
+    currentIndex--;
+    // Also subtract the previous exercise's full duration (we're replaying it)
+    elapsed -= workoutQueue[currentIndex].seconds;
+    elapsed = Math.max(0, elapsed); // Safety: never go negative
+  }
+
+  loadExercise(currentIndex);
+}
+
+  function showComplete() {
+    playWorkoutComplete();
+    
+    // FIX 1: Build the exact object saveWorkout() expects before calling it
+    saveWorkout();
+    checkAchievements();
+    clearInterval(timerInterval);
+    document.getElementById('workout-screen').classList.remove('active');
+    
+    // Fetch and display stats
+    const totalWorkouts = getTotalWorkouts(); 
+    const currentStreak = getStreak();       
+    
+    document.getElementById('stat-total').textContent = totalWorkouts;
+    document.getElementById('stat-streak').textContent = currentStreak + (currentStreak === 1 ? ' Day' : ' Days');
+
+    const screen = document.getElementById('complete-screen');
+    screen.classList.add('active');
+    
+    // FIX 2: Changed durationMins to duration to match your variable name
+    const cats = selectedCategories.join(', ');
+    document.getElementById('complete-msg').textContent =
+      `You crushed a ${durationMins}-min ${cats} workout. No excuses needed.`;
+  }
+
+  function resetApp() {
+    document.getElementById('complete-screen').classList.remove('active');
+    document.getElementById('setup-screen').style.display = 'flex';
+    selectedCategories = [];
+    document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('selected'));
+    document.getElementById('diff-all').classList.add('selected');
+    selectedDifficulty = 'all';
+    document.getElementById('preview-box').classList.remove('visible');
+    document.getElementById('begin-btn').classList.remove('visible');
+    document.getElementById('preview-title').style.display = 'none';
+    document.getElementById('duration-slider').value = 5;
+    document.getElementById('duration-display').textContent = '5 mins';
+    durationMins = 5;
+  }
+</script>
+</body>
+</html>
