@@ -375,13 +375,10 @@
 </div>
 <script>
   // ── SUPABASE SETUP ─────────────────────────────────────────
-const SUPABASE_URL = 'https://zzlijrgneqtizrryncvo.supabaseClient.co';  // ← replace with yours
+const SUPABASE_URL = 'https://zzlijrgneqtizrryncvo.supabase.co';  // ← replace with yours
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp6bGlqcmduZXF0aXpycnluY3ZvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAzMTQ1NDYsImV4cCI6MjA5NTg5MDU0Nn0.NUfR11xTjXv-T-BBkXlXAYV8wtvE6R9BS8CY-9hCbD4';                // ← replace with yours
 const { createClient } = supabase;
 const supabaseClient = createClient(SUPABASE_URL, SUPABASE_KEY);
-
-let currentUser = null;
-
 
 let currentUser = null;
 
@@ -523,7 +520,7 @@ async function loadCloudData() {
   if (!currentUser) return;
 
   // Fetch workouts
-  const { data: workouts } = await supabase
+  const { data: workouts } = await supabaseClient
     .from('workouts')
     .select('*')
     .eq('user_id', currentUser.id)
@@ -540,7 +537,7 @@ async function loadCloudData() {
   }
 
   // Fetch achievements
-  const { data: achievements } = await supabase
+  const { data: achievements } = await supabaseClient
     .from('achievements')
     .select('achievement_id')
     .eq('user_id', currentUser.id);
