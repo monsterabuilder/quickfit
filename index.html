@@ -7,6 +7,7 @@
 <meta name="theme-color" content="#0a0a1a">
   <title>QuickFit</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     button, .cat-btn, input[type="range"] {
@@ -266,6 +267,38 @@
   <h1>⚡ QuickFit</h1>
   <p class="tagline">No equipment. Anywhere. Anytime.</p>
   <button class="trophy-btn" onclick="showAchievements()">🏅 Achievements</button>
+  <button class="trophy-btn" id="sync-btn" onclick="showSyncPanel()">☁️ Sync</button>
+  <div id="sync-panel" style="display:none; width:100%; max-width:480px; background:#1a1a1a; border-radius:16px; padding:20px; margin-bottom:20px; border:2px solid #2a2a2a;">
+
+  <!-- Login Form (shown when not logged in) -->
+  <div id="sync-form">
+    <h3 style="color:#60a5fa; font-size:0.95rem; margin-bottom:4px;">☁️ Sync Your Data</h3>
+    <p style="color:#888; font-size:0.78rem; margin-bottom:16px;">Sign up to save your progress across devices. Totally optional!</p>
+
+    <input id="sync-name" type="text" placeholder="Display name"
+      style="width:100%; padding:10px; margin-bottom:8px; border-radius:10px; border:2px solid #2a2a2a; background:#0a0a1a; color:#f0f0f0; font-size:0.85rem;">
+    <input id="sync-email" type="email" placeholder="Email"
+      style="width:100%; padding:10px; margin-bottom:8px; border-radius:10px; border:2px solid #2a2a2a; background:#0a0a1a; color:#f0f0f0; font-size:0.85rem;">
+    <input id="sync-password" type="password" placeholder="Password (min 6 characters)"
+      style="width:100%; padding:10px; margin-bottom:12px; border-radius:10px; border:2px solid #2a2a2a; background:#0a0a1a; color:#f0f0f0; font-size:0.85rem;">
+
+    <div style="display:flex; gap:8px; margin-bottom:10px;">
+      <button onclick="authLogIn()" style="flex:1; padding:12px; background:#60a5fa; color:#0f0f0f; font-weight:700; border:none; border-radius:10px; font-size:0.85rem; cursor:pointer;">Log In</button>
+      <button onclick="authSignUp()" style="flex:1; padding:12px; background:transparent; border:2px solid #60a5fa; color:#60a5fa; font-weight:700; border-radius:10px; font-size:0.85rem; cursor:pointer;">Sign Up</button>
+    </div>
+
+    <p id="sync-error" style="color:#f87171; font-size:0.78rem; text-align:center; min-height:18px;"></p>
+  </div>
+
+  <!-- Status (shown when logged in) -->
+  <div id="sync-status" style="display:none; text-align:center;">
+    <p style="color:#4ade80; font-size:0.9rem; margin-bottom:4px;">✅ Synced!</p>
+    <p id="sync-user-email" style="color:#888; font-size:0.8rem; margin-bottom:14px;"></p>
+    <button onclick="authLogOut()" style="padding:10px 24px; background:transparent; border:2px solid #f87171; color:#f87171; border-radius:10px; font-size:0.82rem; font-weight:600; cursor:pointer;">Log Out</button>
+  </div>
+
+  <button onclick="hideSyncPanel()" style="width:100%; margin-top:12px; padding:8px; background:transparent; border:1px solid #2a2a2a; color:#888; border-radius:8px; font-size:0.8rem; cursor:pointer;">Close</button>
+</div>
   <p class="section-title">How long do you have?</p>
   <div class="slider-wrapper">
     <div class="slider-label">
@@ -340,6 +373,200 @@
   <button class="back-btn" onclick="hideAchievements()">← Back</button>
 </div>
 <script>
+  // ── SUPABASE SETUP ─────────────────────────────────────────
+const SUPABASE_URL = 'https://zzlijrgneqtizrryncvo.supabase.co';  // ← replace with yours
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp6bGlqcmduZXF0aXpycnluY3ZvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAzMTQ1NDYsImV4cCI6MjA5NTg5MDU0Nn0.NUfR11xTjXv-T-BBkXlXAYV8wtvE6R9BS8CY-9hCbD4';                // ← replace with yours
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let currentUser = null;
+
+  // ── AUTH FUNCTIONS (OPTIONAL LOGIN) ────────────────────────
+
+// Check if user is already logged in from a previous session
+async function checkSession() {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (session) {
+    currentUser = session.user;
+    updateSyncButton();
+    loadCloudData();
+  }
+}
+
+// Sign up with email & password
+async function authSignUp() {
+  const email = document.getElementById('sync-email').value;
+  const password = document.getElementById('sync-password').value;
+  const name = document.getElementById('sync-name').value;
+  const errorEl = document.getElementById('sync-error');
+
+  if (!email || !password) {
+    errorEl.textContent = 'Please enter email and password';
+    return;
+  }
+
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: { data: { display_name: name } }
+  });
+
+  if (error) {
+    errorEl.textContent = error.message;
+    return;
+  }
+
+  errorEl.style.color = '#4ade80';
+  errorEl.textContent = 'Check your email for a confirmation link! 📧';
+}
+
+// Log in
+async function authLogIn() {
+  const email = document.getElementById('sync-email').value;
+  const password = document.getElementById('sync-password').value;
+  const errorEl = document.getElementById('sync-error');
+
+  if (!email || !password) {
+    errorEl.textContent = 'Please enter email and password';
+    return;
+  }
+
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email,
+    password
+  });
+
+  if (error) {
+    errorEl.textContent = error.message;
+    return;
+  }
+
+  currentUser = data.user;
+  hideSyncPanel();
+  updateSyncButton();
+  uploadLocalDataToCloud();
+}
+
+// Log out
+async function authLogOut() {
+  await supabase.auth.signOut();
+  currentUser = null;
+  updateSyncButton();
+}
+
+// Update the sync button text based on login state
+function updateSyncButton() {
+  const btn = document.getElementById('sync-btn');
+  if (currentUser) {
+    btn.textContent = '☁️ Synced ✅';
+    btn.onclick = showSyncPanel;
+  } else {
+    btn.textContent = '☁️ Sync';
+    btn.onclick = showSyncPanel;
+  }
+}
+
+// Show/hide the sync login panel
+function showSyncPanel() {
+  document.getElementById('sync-panel').style.display = 'block';
+  // Update panel content based on login state
+  const form = document.getElementById('sync-form');
+  const status = document.getElementById('sync-status');
+  if (currentUser) {
+    form.style.display = 'none';
+    status.style.display = 'block';
+    document.getElementById('sync-user-email').textContent = currentUser.email;
+  } else {
+    form.style.display = 'block';
+    status.style.display = 'none';
+  }
+}
+
+function hideSyncPanel() {
+  document.getElementById('sync-panel').style.display = 'none';
+}
+
+  // ── CLOUD SYNC FUNCTIONS ───────────────────────────────────
+
+// Upload existing localStorage data to Supabase (runs once after login)
+async function uploadLocalDataToCloud() {
+  if (!currentUser) return;
+
+  // Upload workouts
+  const log = getWorkoutLog();
+  for (const w of log) {
+    await supabase.from('workouts').insert({
+      user_id: currentUser.id,
+      categories: w.categories,
+      difficulty: w.difficulty,
+      duration: w.duration,
+      completed_at: w.date
+    });
+  }
+
+  // Upload achievements
+  const achievementIds = getUnlockedIds();
+  for (const aid of achievementIds) {
+    await supabase.from('achievements').insert({
+      user_id: currentUser.id,
+      achievement_id: aid
+    }).select();  // .select() prevents error on duplicates with UNIQUE constraint
+  }
+}
+
+// Download cloud data to localStorage (runs on login / app start)
+async function loadCloudData() {
+  if (!currentUser) return;
+
+  // Fetch workouts
+  const { data: workouts } = await supabase
+    .from('workouts')
+    .select('*')
+    .eq('user_id', currentUser.id)
+    .order('completed_at', { ascending: true });
+
+  if (workouts && workouts.length > 0) {
+    const cloudLog = workouts.map(w => ({
+      date: w.completed_at,
+      categories: w.categories,
+      difficulty: w.difficulty,
+      duration: w.duration
+    }));
+    localStorage.setItem('quickfit_log', JSON.stringify(cloudLog));
+  }
+
+  // Fetch achievements
+  const { data: achievements } = await supabase
+    .from('achievements')
+    .select('achievement_id')
+    .eq('user_id', currentUser.id);
+
+  if (achievements && achievements.length > 0) {
+    const ids = achievements.map(a => a.achievement_id);
+    saveUnlockedIds(ids);
+  }
+}
+
+// Save a single workout to cloud (called after each workout)
+async function saveWorkoutToCloud(workoutData) {
+  if (!currentUser) return;
+  await supabase.from('workouts').insert({
+    user_id: currentUser.id,
+    categories: workoutData.categories,
+    difficulty: workoutData.difficulty,
+    duration: workoutData.duration,
+    completed_at: workoutData.date
+  });
+}
+
+// Save a single achievement to cloud
+async function saveAchievementToCloud(achievementId) {
+  if (!currentUser) return;
+  await supabase.from('achievements').insert({
+    user_id: currentUser.id,
+    achievement_id: achievementId
+  });
+}
+  
   // Duration ranges per difficulty level (min, max seconds)
   const DURATION_RANGE = {
     beginner:     { min: 40, max: 50 },
@@ -603,14 +830,20 @@
   
   // ── WORKOUT LOGGING ──────────────────────────────────────────────
 function saveWorkout() {
-  const log = JSON.parse(localStorage.getItem('quickfit_log') || '[]');
-  log.push({
+  const workoutData = {
     date: new Date().toISOString(),
     categories: selectedCategories,
     difficulty: selectedDifficulty,
     duration: durationMins
-  });
+  };
+
+  // Always save to localStorage (works offline)
+  const log = JSON.parse(localStorage.getItem('quickfit_log') || '[]');
+  log.push(workoutData);
   localStorage.setItem('quickfit_log', JSON.stringify(log));
+
+  // Also save to cloud if logged in
+  saveWorkoutToCloud(workoutData);
 }
 
 function getWorkoutLog() {
@@ -774,7 +1007,9 @@ function checkAchievements() {
 
   // If anything new was unlocked, save and show toasts
   if (newlyUnlocked.length > 0) {
-    saveUnlockedIds(unlocked);
+  saveUnlockedIds(unlocked);
+  // Sync each new achievement to cloud
+  newlyUnlocked.forEach(a => saveAchievementToCloud(a.id));
     // Stagger toasts so they don't overlap
     newlyUnlocked.forEach((a, i) => {
       setTimeout(() => showAchievementToast(a), i * 2000);
@@ -1123,6 +1358,8 @@ function hideAchievements() {
     document.getElementById('duration-display').textContent = '5 mins';
     durationMins = 5;
   }
+  // ── APP STARTUP ────────────────────────────────────────────
+checkSession();
 </script>
 <script>
   if ('serviceWorker' in navigator) {
