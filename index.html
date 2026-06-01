@@ -375,9 +375,13 @@
 </div>
 <script>
   // ── SUPABASE SETUP ─────────────────────────────────────────
-const SUPABASE_URL = 'https://zzlijrgneqtizrryncvo.supabase.co';  // ← replace with yours
+const SUPABASE_URL = 'https://zzlijrgneqtizrryncvo.supabaseClient.co';  // ← replace with yours
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp6bGlqcmduZXF0aXpycnluY3ZvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAzMTQ1NDYsImV4cCI6MjA5NTg5MDU0Nn0.NUfR11xTjXv-T-BBkXlXAYV8wtvE6R9BS8CY-9hCbD4';                // ← replace with yours
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const { createClient } = supabase;
+const supabaseClient = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let currentUser = null;
+
 
 let currentUser = null;
 
@@ -385,7 +389,7 @@ let currentUser = null;
 
 // Check if user is already logged in from a previous session
 async function checkSession() {
-  const { data: { session } } = await supabase.auth.getSession();
+  const { data: { session } } = await supabaseClient.auth.getSession();
   if (session) {
     currentUser = session.user;
     updateSyncButton();
@@ -405,7 +409,7 @@ async function authSignUp() {
     return;
   }
 
-  const { data, error } = await supabase.auth.signUp({
+  const { data, error } = await supabaseClient.auth.signUp({
     email,
     password,
     options: { data: { display_name: name } }
@@ -431,7 +435,7 @@ async function authLogIn() {
     return;
   }
 
-  const { data, error } = await supabase.auth.signInWithPassword({
+  const { data, error } = await supabaseClient.auth.signInWithPassword({
     email,
     password
   });
@@ -449,7 +453,7 @@ async function authLogIn() {
 
 // Log out
 async function authLogOut() {
-  await supabase.auth.signOut();
+  await supabaseClient.auth.signOut();
   currentUser = null;
   updateSyncButton();
 }
@@ -495,7 +499,7 @@ async function uploadLocalDataToCloud() {
   // Upload workouts
   const log = getWorkoutLog();
   for (const w of log) {
-    await supabase.from('workouts').insert({
+    await supabaseClient.from('workouts').insert({
       user_id: currentUser.id,
       categories: w.categories,
       difficulty: w.difficulty,
@@ -507,7 +511,7 @@ async function uploadLocalDataToCloud() {
   // Upload achievements
   const achievementIds = getUnlockedIds();
   for (const aid of achievementIds) {
-    await supabase.from('achievements').insert({
+    await supabaseClient.from('achievements').insert({
       user_id: currentUser.id,
       achievement_id: aid
     }).select();  // .select() prevents error on duplicates with UNIQUE constraint
@@ -550,7 +554,7 @@ async function loadCloudData() {
 // Save a single workout to cloud (called after each workout)
 async function saveWorkoutToCloud(workoutData) {
   if (!currentUser) return;
-  await supabase.from('workouts').insert({
+  await supabaseClient.from('workouts').insert({
     user_id: currentUser.id,
     categories: workoutData.categories,
     difficulty: workoutData.difficulty,
@@ -562,7 +566,7 @@ async function saveWorkoutToCloud(workoutData) {
 // Save a single achievement to cloud
 async function saveAchievementToCloud(achievementId) {
   if (!currentUser) return;
-  await supabase.from('achievements').insert({
+  await supabaseClient.from('achievements').insert({
     user_id: currentUser.id,
     achievement_id: achievementId
   });
