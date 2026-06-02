@@ -1,29 +1,51 @@
-const CACHE_NAME = 'quickfit-v2';
+const CACHE_NAME = 'quickfit-v3';
+
 const ASSETS = [
   './',
   './index.html',
   './manifest.json'
 ];
 
-// Install: cache all core files
+// Install: cache core files
 self.addEventListener('install', event => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS))
+    caches.open(CACHE_NAME)
+      .then(cache => cache.addAll(ASSETS))
   );
+  // Force new SW to take over immediately
+  self.skipWaiting();
 });
 
-// Activate: clean up old caches
+// Activate: delete ALL old caches
 self.addEventListener('activate', event => {
   event.waitUntil(
-    caches.keys().then(keys =>
-      Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
-    )
+    caches.keys().then(keys => {
+      return Promise.all(
+        keys
+          .filter(key => key !== CACHE_NAME)
+          .map(key => caches.delete(key))
+      );
+    })
   );
+  // Take control of all pages immediately
+  self.clients.claim();
 });
 
-// Fetch: serve from cache first, fall back to network
+// Fetch: Network first, fall back to cache
 self.addEventListener('fetch', event => {
   event.respondWith(
-    caches.match(event.request).then(cached => cached || fetch(event.request))
+    fetch(event.request)
+      .then(response => {
+        // Save fresh copy to cache
+        const clone = response.clone();
+        caches.open(CACHE_NAME).then(cache => {
+          cache.put(event.request, clone);
+        });
+        return response;
+      })
+      .catch(() => {
+        // Offline: serve from cache
+        return caches.match(event.request);
+      })
   );
 });
