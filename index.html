@@ -377,8 +377,7 @@
   // ── SUPABASE SETUP ─────────────────────────────────────────
 const SUPABASE_URL = 'https://zzlijrgneqtizrryncvo.supabase.co';  // ← replace with yours
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp6bGlqcmduZXF0aXpycnluY3ZvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAzMTQ1NDYsImV4cCI6MjA5NTg5MDU0Nn0.NUfR11xTjXv-T-BBkXlXAYV8wtvE6R9BS8CY-9hCbD4';                // ← replace with yours
-const { createClient } = supabase;
-const supabaseClient = createClient(SUPABASE_URL, SUPABASE_KEY);
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let currentUser = null;
 
