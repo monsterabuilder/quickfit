@@ -1051,76 +1051,7 @@ function showAchievementToast(achievement) {
     setTimeout(() => toast.remove(), 500);
   }, 3000);
 }
-  // Get list of achievement IDs already unlocked
-function getUnlockedIds() {
-  return JSON.parse(localStorage.getItem('quickfit_achievements') || '[]');
-}
-
-// Save unlocked IDs to localStorage
-function saveUnlockedIds(ids) {
-  localStorage.setItem('quickfit_achievements', JSON.stringify(ids));
-}
-
-// Run after every workout — check all achievements
-function checkAchievements() {
-  const stats = buildStats();
-  const unlocked = getUnlockedIds();
-  const newlyUnlocked = [];
-
-  ACHIEVEMENTS.forEach(a => {
-    // Skip if already unlocked
-    if (unlocked.includes(a.id)) return;
-
-    // Run the check function
-    if (a.check(stats)) {
-      unlocked.push(a.id);
-      newlyUnlocked.push(a);
-    }
-  });
-
-  // If anything new was unlocked, save and show toasts
-  if (newlyUnlocked.length > 0) {
-    saveUnlockedIds(unlocked);
-    // Stagger toasts so they don't overlap
-    newlyUnlocked.forEach((a, i) => {
-      setTimeout(() => showAchievementToast(a), i * 2000);
-    });
-  }
-}
-
-// Show the sliding toast notification
-function showAchievementToast(achievement) {
-  // Play a celebratory sound
-  playBeep(523, 0.1);
-  setTimeout(() => playBeep(659, 0.1), 100);
-  setTimeout(() => playBeep(880, 0.2), 200);
-
-  const toast = document.createElement('div');
-  toast.className = 'achievement-toast';
-  toast.innerHTML = `
-    <span class="achievement-toast-icon">${achievement.icon}</span>
-    <div>
-      <div class="achievement-toast-title">🏅 Achievement Unlocked!</div>
-      <div class="achievement-toast-name">${achievement.name}</div>
-      <div class="achievement-toast-desc">${achievement.desc}</div>
-    </div>
-  `;
-  document.body.appendChild(toast);
-
-  // Tiny delay then slide in (requestAnimationFrame ensures CSS transition works)
-  requestAnimationFrame(() => {
-    requestAnimationFrame(() => {
-      toast.classList.add('show');
-    });
-  });
-
-  // Slide out and remove after 3 seconds
-  setTimeout(() => {
-    toast.classList.remove('show');
-    setTimeout(() => toast.remove(), 500);
-  }, 3000);
-}
-  // Show the achievements gallery
+  
 function showAchievements() {
   document.getElementById('setup-screen').style.display = 'none';
   document.getElementById('achievement-screen').classList.add('active');
